@@ -1,72 +1,84 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Xadrez</title>
-  <link rel="icon" href="data:,">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <meta charset="UTF-8" />
+  <title>Xadrez Silencioso - Protocolo Silvio</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
     #tabuleiro {
-      max-width: 500px;
-      max-height: 500px;
-      width: 90vw;
-      height: 90vw;
       display: grid;
-      grid-template-columns: repeat(8, 1fr);
-      grid-template-rows: repeat(8, 1fr);
-      border: 2px solid #000;
-      margin-top: 10px;
+      grid-template-columns: repeat(8, 50px);
+      grid-template-rows: repeat(8, 50px);
+      width: 402px;
+      border: 2px solid black;
     }
     .casa {
-      width: 100%; height: 100%; display: flex;
-      align-items: center; justify-content: center;
-      position: relative;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
     }
-    .casa.clicavel { cursor: pointer; }
-    .branca { background: #ccc; color: white; }
-    .preta { background: #3399ff; color: black; }
-    .selecionada { outline: 3px solid #ffeb3b; }
-    .marcada { border: 3px solid black; }
-    .indicador-mov { position: absolute; top: 4px; right: 4px; width: 10px; height: 10px; background: black; border-radius: 50%; }
-    .indicador-origem { position: absolute; bottom: 4px; left: 4px; width: 10px; height: 10px; background: white; border-radius: 50%; }
-    select, button { margin: 10px 5px 5px 0; font-size: 1rem; }
-    #info { margin-top: 10px; font-size: 1rem; }
+    .branca {
+      background-color: #f0f0f0;
+    }
+    .preta {
+      background-color: #3399ff;
+    }
+    .clicavel {
+      cursor: pointer;
+    }
+    .selecionada {
+      outline: 3px solid red;
+    }
+    .indicador-mov {
+      width: 10px;
+      height: 10px;
+      background-color: black;
+      border-radius: 50%;
+      position: absolute;
+      transform: translate(15px, 15px);
+    }
+    .indicador-origem {
+      width: 10px;
+      height: 10px;
+      background-color: white;
+      border-radius: 50%;
+      position: absolute;
+      transform: translate(15px, 15px);
+    }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.min.js"></script>
 </head>
 <body>
   <h2>Modo Silencioso - Protocolo Silvio</h2>
 
-  <label>Cor das Peças:
-    <select id="cor">
-      <option value="w">Brancas</option>
-      <option value="b">Pretas</option>
-    </select>
-  </label>
+  <label for="cor">Cor das Peças:</label>
+  <select id="cor">
+    <option value="w">Brancas</option>
+    <option value="b">Pretas</option>
+  </select>
 
-  <label>Profundidade da IA:
-    <select id="profundidade">
-      <option value="4">Fraco</option>
-      <option value="8" selected>Médio</option>
-      <option value="12">Forte</option>
-      <option value="16">Muito Forte</option>
-    </select>
-  </label><br>
+  <label for="profundidade">Profundidade da IA:</label>
+  <select id="profundidade">
+    <option value="5">Rápido</option>
+    <option value="10">Médio</option>
+    <option value="15">Profundo</option>
+  </select>
 
-  <button onclick="iniciarPartida()">Iniciar Partida</button>
-  <button onclick="desfazerJogada()">⏪ Desfazer Jogada</button>
-  <button onclick="voltarJogada()">◀ Anterior</button>
-  <button onclick="avancarJogada()">▶ Próxima</button>
-  <button onclick="continuarAPartirDaqui()">✔️ Continuar daqui</button>
+  <div>
+    <button onclick="iniciarPartida()">Iniciar Partida</button>
+    <button onclick="desfazerJogada()">⏪ Desfazer Jogada</button>
+    <button onclick="voltarJogada()">◀ Anterior</button>
+    <button onclick="avancarJogada()">▶ Próxima</button>
+    <button onclick="continuarAPartirDaqui()">✔️ Continuar daqui</button>
+  </div>
 
   <div id="tabuleiro"></div>
   <div id="info"></div>
+
+  <!-- Inclui apenas 1x o script -->
   <script src="script.js"></script>
 </body>
 </html>
 
-  <div id="info"></div>
-  <script src="script.js"></script>
-</body>
-</html>
