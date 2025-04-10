@@ -1,5 +1,3 @@
-# Xadrez-Tabuleiro-Silvio
-========================================================================================================
 
 # Xadrez - Tabuleiro Silencioso (Protocolo Silvio)
 
