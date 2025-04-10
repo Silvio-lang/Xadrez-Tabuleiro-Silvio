@@ -212,6 +212,6 @@ function avancarJogada() {
 
 function continuarAPartirDaqui() {
   historicoJogadas = historicoJogadas.slice(0, indiceAtual);
-  stockfish = new Worker("stockfish.js");
+  stockfish = new Worker("https://lichess1.org/stockfish/stockfish.wasm.js");
   criarTabuleiro();
 }
