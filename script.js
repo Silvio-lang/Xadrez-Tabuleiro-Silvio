@@ -1,4 +1,4 @@
-// Script.js completo para o jogo Xadrez
+// Script.js completo para o jogo Xadrez (usando versão lite do Stockfish)
 let jogo = new Chess();
 let historicoJogadas = [];
 let indiceAtual = 0;
@@ -146,7 +146,7 @@ function clicarCasa(posicao) {
 function iniciarPartida() {
   corUsuario = document.getElementById("cor").value;
   jogo = new Chess();
-  stockfish = new Worker("https://lichess1.org/stockfish/stockfish.wasm.js");
+  stockfish = new Worker("stockfish-16.1-lite.js");
   historicoJogadas = [jogo.fen()];
   indiceAtual = 1;
   criarTabuleiro();
@@ -212,6 +212,6 @@ function avancarJogada() {
 
 function continuarAPartirDaqui() {
   historicoJogadas = historicoJogadas.slice(0, indiceAtual);
-  stockfish = new Worker("https://lichess1.org/stockfish/stockfish.wasm.js");
+  stockfish = new Worker("stockfish-16.1-lite.js");
   criarTabuleiro();
 }
