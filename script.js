@@ -146,7 +146,7 @@ function clicarCasa(posicao) {
 function iniciarPartida() {
   corUsuario = document.getElementById("cor").value;
   jogo = new Chess();
-  stockfish = new Worker("stockfish.js");
+  stockfish = new Worker("https://lichess1.org/stockfish/stockfish.wasm.js");
   historicoJogadas = [jogo.fen()];
   indiceAtual = 1;
   criarTabuleiro();
