@@ -6,34 +6,34 @@
   <title>Xadrez</title>
   <link rel="icon" href="data:,">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-<style>
-  body { font-family: sans-serif; padding: 20px; }
-  #tabuleiro {
-    max-width: 500px;
-    max-height: 500px;
-    width: 90vw;
-    height: 90vw;
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    border: 2px solid #000;
-    margin-top: 10px;
-  }
-  .casa {
-    width: 100%; height: 100%; display: flex;
-    align-items: center; justify-content: center;
-    position: relative; font-size: 2rem;
-  }
-  .casa.clicavel { cursor: pointer; }
-  .branca { background: #f0d9b5; color: #000; }
-  .preta { background: #b58863; color: #fff; }
-  .selecionada { outline: 3px solid #ffeb3b; }
-  .marcada { border: 3px solid black; }
-  .indicador-mov { position: absolute; top: 4px; right: 4px; width: 10px; height: 10px; background: black; border-radius: 50%; }
-  .indicador-origem { position: absolute; bottom: 4px; left: 4px; width: 10px; height: 10px; background: white; border-radius: 50%; }
-  select, button { margin: 10px 5px 5px 0; font-size: 1rem; }
-  #info { margin-top: 10px; font-size: 1rem; }
-</style>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    #tabuleiro {
+      max-width: 500px;
+      max-height: 500px;
+      width: 90vw;
+      height: 90vw;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      border: 2px solid #000;
+      margin-top: 10px;
+    }
+    .casa {
+      width: 100%; height: 100%; display: flex;
+      align-items: center; justify-content: center;
+      position: relative; font-size: 2rem;
+    }
+    .casa.clicavel { cursor: pointer; }
+    .branca { background: #f0d9b5; color: #000; }
+    .preta { background: #b58863; color: #fff; }
+    .selecionada { outline: 3px solid #ffeb3b; }
+    .marcada { border: 3px solid black; }
+    .indicador-mov { position: absolute; width: 10px; height: 10px; border-radius: 50%; }
+    .indicador-origem { position: absolute; bottom: 4px; left: 4px; width: 10px; height: 10px; background: white; border-radius: 50%; }
+    select, button { margin: 10px 5px 5px 0; font-size: 1rem; }
+    #info { margin-top: 10px; font-size: 1rem; }
+  </style>
 </head>
 <body>
   <h2>Modo Silencioso - Protocolo Silvio</h2>
@@ -59,6 +59,7 @@
   <button onclick="voltarJogada()">◀ Anterior</button>
   <button onclick="avancarJogada()">▶ Próxima</button>
   <button onclick="continuarAPartirDaqui()">✔️ Continuar daqui</button>
+  <button onclick="sugerirJogadas()">💡 Hint</button>
 
   <div id="tabuleiro"></div>
   <div id="info"></div>
