@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xadrez</title>
+  <link rel="icon" href="data:,">
+  
+  <!-- Link para o arquivo CSS externo -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Carregar uma versão estável de chess.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script>
+    // Verificar se Chess foi carregado corretamente
+    if (typeof Chess === "undefined") {
+      console.error("Erro: A biblioteca chess.js não foi carregada corretamente.");
+      document.body.innerHTML = "<h1>Erro: Não foi possível carregar a biblioteca de xadrez. Verifique sua conexão ou tente recarregar a página.</h1>";
+    } else {
+      // Definir Chess globalmente
+      window.Chess = Chess;
+      // Inicializar o jogo somente após Chess estar disponível
+      window.jogo = new Chess();
+    }
+  </script>
+  <!-- Carregar os outros scripts somente após Chess e jogo estarem definidos -->
+<script type="module" src="script.js"></script>
+  </head>
+<body>
+
+  <h2 id="main-title" style="text-align: center;">XADREZ ON-LINE</h2>
+
+  <div class="grupo-botoes">
+    <div class="config-container">
+      <label>Oponente:
+        <select id="modo-jogo">
+          <option value="humano-ia">IA</option>
+          <option value="humano-humano">Humano</option>
+        </select>
+      </label>
+      <div id="config-humano-ia">
+        <label>Você:
+          <select id="cor">
+            <option value="w">Brancas</option>
+            <option value="b">Pretas</option>
+          </select>
+        </label>
+        <label>Nível:
+          <select id="profundidade">
+            <option value="1-50">Iniciante 1</option>
+            <option value="2-30">Iniciante 2</option>
+            <option value="3-10">Iniciante 3</option>
+            <option value="4-0">Fraco</option>
+            <option value="8-0" selected>Médio</option>
+            <option value="12-0">Forte</option>
+            <option value="16-0">Muito Forte</option>
+            <option value="random">Aleatório</option>
+          </select>
+        </label>
+      </div>
+      <div id="config-humano-humano">
+        <label>Brancas:
+          <input type="text" id="nome-jogador1" placeholder="Nome do Jogador 1">
+        </label>
+        <label>Pretas:
+          <input type="text" id="nome-jogador2" placeholder="Nome do Jogador 2">
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="grupo-botoes top-controls-container">
+    <button id="btn-iniciar">🎲 Iniciar</button>
+    <button id="btn-confirmar">✅ Jogue</button> <!-- Botão Confirmar -->
+    <button id="btn-voltar">◀</button>
+    <button id="btn-avancar">▶</button>
+    <button id="btn-retomar">✔️ Retomar</button>
+    <button id="btn-manual">📘 Instruções</button>
+    <button id="botao-problema-mate">🧩 Treinos</button>   </div>
+
+  <div id="estado-jogo">Selecione o modo de jogo para começar.</div>
+
+  <div id="mouse-coord"></div>
+
+  <div id="tabuleiro" class="board-container"></div>
+  <div id="capturas">
+    Brancas capturaram: <br>
+    Pretas capturaram:
+  </div>
+  <div id="sugestoes">
+    <div class="sugestoes-container">
+      <button id="botao-dicas" onclick="sugerirJogadas()">💡 Dicas</button>
+      <strong>Dicas da IA:</strong>
+      <div class="linha-sugestoes" id="sugestoes-linha"></div>
+    </div>
+  </div>
+  <div id="avaliacao">Nota do lance: 0 pontos.</div>
+  <div id="info"></div>
+  <div id="temp-message-area"></div>
+
+  <div id="manual">
+    <h2>Instruções</h2>
+    <p>Este jogo de xadrez utiliza uma inteligência artificial baseada no Stockfish.</p>
+    <ul>
+      <li>Desloque a tela para cima para ver mais informações sobre a partida.</li>
+      <li>Utilize o ChatBot para conversar sobre o jogo aqui, e sobre Xadrez.</li>
+      <li>Escolha o modo de jogo: "Humano vs IA" ou "Humano vs Humano".</li>
+      <li>Contra a IA, ela jogará após você clicar em "jogue".</li>
+      <li>Contra a IA, escolha a cor das peças e o nível da IA, e “Iniciar”.</li>
+      <li>Contra a IA, clique em “Dicas” para sugestões da IA.</li>
+      <li>Contra 'Humano' é com apenas um dispositivo, e não à distância.</li>
+      <li>Clique na peça e depois no destino para movimentá-la.</li>
+      <li>Use os botões “◀” e “▶” para rever os lances do jogo.</li>
+      <li>Nesta fase, escolha a jogada e pressione 'Retomar' para seguir dali..</li>
+      <li></li>
+      <li><strong>Sugestões e comentários: (Telegram: 't.me/SilvioAurich')</strong></li>
+    </ul>
+    <button onclick="voltarAoJogo()">⬅️ Voltar ao Jogo</button>
+  </div>
+
+  <div id="gerenciar-treinos">
+    <h2>Gerenciar Treinos</h2>
+    <button onclick="salvarPosicaoAtual()">Salvar Posição Atual</button>
+    <ul id="lista-problemas"></ul>
+    <button onclick="voltarAoJogo()">⬅️ Voltar ao Jogo</button>
+  </div>
+</body>
+
+<script 
+ async 
+ src="https://app.gptmaker.ai/widget/3E0F14D02CF331C2D17D0EF466D45D59/float.js">
+</script>
+        
+</html>
