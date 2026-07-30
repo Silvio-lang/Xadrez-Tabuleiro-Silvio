@@ -800,13 +800,13 @@ function handleStartGame() {
     }
 
 
-    if (modo === "humano-humano") {
+/*    if (modo === "humano-humano") {
         if (!nome1 || !nome2) {
             mostrarMensagemTemporaria("Por favor, insira o nome de ambos os jogadores.", 3000);
             return;
         }
     }
-    
+*/    
     // Zera as variáveis de performance explicitamente ao clicar em Iniciar
     performanceBrancas = 0;
     performancePretas = 0;
