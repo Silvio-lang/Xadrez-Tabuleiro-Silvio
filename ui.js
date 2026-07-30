@@ -786,7 +786,7 @@ function handleStartGame() {
     const nomeJogador1El = document.getElementById("nome-jogador1");
     const nomeJogador2El = document.getElementById("nome-jogador2");
 
-    const modo = modoJogoEl.value;
+    // const modo = modoJogoEl.value;
     const cor = corEl.value;
     const nome1 = nomeJogador1El.value;
     const nome2 = nomeJogador2El.value;
