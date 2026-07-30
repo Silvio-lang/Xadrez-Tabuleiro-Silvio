@@ -786,12 +786,13 @@ function handleStartGame() {
     const nomeJogador1El = document.getElementById("nome-jogador1");
     const nomeJogador2El = document.getElementById("nome-jogador2");
 
-    // const modo = modoJogoEl.value;
-    const cor = corEl.value;
-    const nome1 = nomeJogador1El.value;
-    const nome2 = nomeJogador2El.value;
+    // Leituras protegidas para evitar travamento caso algum id no HTML seja nulo
+    const modo = modoJogoEl ? modoJogoEl.value : "humano-ia";
+    const cor = corEl ? corEl.value : "brancas";
+    const nome1 = nomeJogador1El ? nomeJogador1El.value : "";
+    const nome2 = nomeJogador2El ? nomeJogador2El.value : "";
     
-// Configura o Stockfish com base na profundidade/tempo escolhida na UI
+    // Configura o Stockfish com base na profundidade/tempo escolhida na UI
     if (profundidadeEl) {
         const nivelEscolhido = profundidadeEl.value;
         if (nivelEscolhido) {
@@ -799,14 +800,13 @@ function handleStartGame() {
         }
     }
 
-
-/*    if (modo === "humano-humano") {
+    if (modo === "humano-humano") {
         if (!nome1 || !nome2) {
-            mostrarMensagemTemporaria("Por favor, insira o nome de ambos os jogadores.", 3000);
+            mostrarMensagemTemporaria("Por favor, insira o nome de ambos os jogadores.", 2000);
             return;
         }
     }
-*/    
+
     // Zera as variáveis de performance explicitamente ao clicar em Iniciar
     performanceBrancas = 0;
     performancePretas = 0;
@@ -822,6 +822,7 @@ function handleStartGame() {
 /**
  * Lida com a mudança de modo (IA vs Humano) para mostrar/esconder as configurações de nome.
  */
+
 function handleModeChange() {
     const modo = document.getElementById("modo-jogo").value;
     const configIA = document.getElementById("config-humano-ia");
