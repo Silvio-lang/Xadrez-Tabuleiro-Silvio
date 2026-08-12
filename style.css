@@ -35,7 +35,13 @@ h2 {
   align-items: center; 
   justify-content: center;
   position: relative; 
-  font-size: 2rem;
+  font-size: 2.2rem;
+  aspect-ratio: 1 / 1; /* Garante a geometria quadrada rigorosa */
+  
+  /* Efeito de relevo 3D para dar volume e sombra às peças */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6), 
+              -1px -1px 1px rgba(255, 255, 255, 0.4);
+  // font-weight: bold;
 }
 
 .casa.clicavel { 
@@ -123,7 +129,7 @@ button:hover {
 
 .config-container {
   display: flex; 
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
 }

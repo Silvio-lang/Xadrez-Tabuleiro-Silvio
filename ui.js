@@ -33,7 +33,7 @@ let capturasEl = null;
 let topControlsContainerEl = null; 
 let boardContainerEl = null; 
 let btnConfirmarEl = null; 
-let configContainerEl = null;
+
 // Variable to store the currently selected square for making a move (UI state)
 let casaSelecionada = null;
 
@@ -72,7 +72,6 @@ function initializeUIElements() {
     topControlsContainerEl = document.querySelector(".top-controls-container"); 
     boardContainerEl = document.querySelector(".board-container"); 
     btnConfirmarEl = document.getElementById("btn-confirmar"); 
-    configContainerEl = document.querySelector(".config-container");
 
     if (!mainTitleEl || !tabuleiroEl || !infoEl || !estadoJogoEl || !avaliacaoEl || !sugestoesEl || !sugestoesLinhaEl || !tempMessageAreaEl || !manualEl || !gerenciarTreinosEl || !capturasEl || !topControlsContainerEl || !boardContainerEl || !btnConfirmarEl) {
         console.error("Erro: Um ou mais elementos da UI não foram encontrados. Verifique o jogo.html.");
@@ -133,7 +132,6 @@ function criarTabuleiro() {
             const casa = document.createElement("div"); 
             casa.className = `casa ${(i + j) % 2 === 0 ? 'branca' : 'preta'}`; 
             casa.dataset.posicao = posicao; 
-            casa.title = posicao;
 
             const peça = jogo.get(posicao); 
             if (peça) {
@@ -274,20 +272,25 @@ function setCasaSelecionada(posicao) {
 
 
 /**
- * Returns the Unicode character for a given chess piece object.
+ * Retorna o elemento de imagem para a peça do jogo (mantido para compatibilidade).
+ */
+/**
+ * Retorna o caractere Unicode para o objeto da peça de xadrez.
  */
 function peçaUnicode(peça) {
+    if (!peça) return '';
+
     const unicodePeças = {
-        'p': { 'w': '♙', 'b': '♟' }, 
-        'r': { 'w': '♖', 'b': '♜' }, 
-        'n': { 'w': '♘', 'b': '♞' }, 
-        'b': { 'w': '♗', 'b': '♝' }, 
-        'q': { 'w': '♕', 'b': '♛' }, 
-        'k': { 'w': '♔', 'b': '♚' }  
+        'p': { 'w': '♙', 'b': '♟' },
+        'r': { 'w': '♖', 'b': '♜' },
+        'n': { 'w': '♘', 'b': '♞' },
+        'b': { 'w': '♗', 'b': '♝' },
+        'q': { 'w': '♕', 'b': '♛' },
+        'k': { 'w': '♔', 'b': '♚' }
     };
+
     return unicodePeças[peça.type][peça.color];
 }
-
 /**
  * Updates the display of captured pieces.
  * USA SOMENTE O MÉTODO DE DIFERENÇA MATERIAL para garantir precisão.
@@ -580,7 +583,6 @@ function verificarXeque() {
  */
 function mostrarManual() {
     if (mainTitleEl) mainTitleEl.style.display = "none";
-    if (configContainerEl) configContainerEl.style.display = "none";
     if (topControlsContainerEl) topControlsContainerEl.style.display = "none";
     if (estadoJogoEl) estadoJogoEl.style.display = "none";
     if (boardContainerEl) boardContainerEl.style.display = "none";
@@ -599,7 +601,6 @@ function mostrarManual() {
 function mostrarGerenciarTreinos() {
     console.log("DEBUG: Iniciando mostrarGerenciarTreinos...");
     if (mainTitleEl) mainTitleEl.style.display = "none";
-    if (configContainerEl) configContainerEl.style.display = "none";
     if (topControlsContainerEl) topControlsContainerEl.style.display = "none";
     if (estadoJogoEl) estadoJogoEl.style.display = "none";
     if (boardContainerEl) boardContainerEl.style.display = "none";
@@ -640,7 +641,6 @@ function voltarAoJogo() {
     const gameState = getGameState();
 
     if (mainTitleEl) mainTitleEl.style.display = "block";
-    if (configContainerEl) configContainerEl.style.display = "flex"; 
     if (topControlsContainerEl) topControlsContainerEl.style.display = "flex";
     if (estadoJogoEl) estadoJogoEl.style.display = "block";
     if (boardContainerEl) {
@@ -726,7 +726,7 @@ function atualizarEstadoJogo(modeFromConfig) {
         if (currentMode === "humano-humano") {
             estadoJogoEl.innerHTML = `Partida Humano vs Humano: ${gameState.nomeJogador1 || "Jogador 1"} (Br) vs ${gameState.nomeJogador2 || "Jogador 2"} (Pr).`;
         } else {
-            const nivelEl = document.getElementById("profundidade");
+             const nivelEl = document.getElementById("profundidade");
             const nivelTexto = nivelEl ? nivelEl.options[nivelEl.selectedIndex].text : getLevelName(currentLevel);
             estadoJogoEl.innerHTML = `Partida Humano vs IA (${nivelTexto}): Você (${mostrarCor(gameState.corUsuario)}) vs IA (${mostrarCor(gameState.corUsuario === 'w' ? 'b' : 'w')}).`;
         }
@@ -786,27 +786,27 @@ function handleStartGame() {
     const nomeJogador1El = document.getElementById("nome-jogador1");
     const nomeJogador2El = document.getElementById("nome-jogador2");
 
-    // Leituras protegidas para evitar travamento caso algum id no HTML seja nulo
-    const modo = modoJogoEl ? modoJogoEl.value : "humano-ia";
-    const cor = corEl ? corEl.value : "brancas";
-    const nome1 = nomeJogador1El ? nomeJogador1El.value : "";
-    const nome2 = nomeJogador2El ? nomeJogador2El.value : "";
+    const modo = modoJogoEl.value;
+    const cor = corEl.value;
+    const nome1 = nomeJogador1El.value;
+    const nome2 = nomeJogador2El.value;
     
-    // Configura o Stockfish com base na profundidade/tempo escolhida na UI
+ // Configura o Stockfish com o nível escolhido na UI
     if (profundidadeEl) {
-        const nivelEscolhido = profundidadeEl.value;
+        const nivelEscolhido = profundidadeEl.value; // Captura o texto, ex: "8-0"
+        
         if (nivelEscolhido) {
-            setCurrentLevel(nivelEscolhido);
+            setCurrentLevel(nivelEscolhido); // Ativa o motor com a nova calibração!
         }
-    }
+    }    
 
-    if (modo === "humano-humano") {
+ /*   if (modo === "humano-humano") {
         if (!nome1 || !nome2) {
-            mostrarMensagemTemporaria("Por favor, insira o nome de ambos os jogadores.", 2000);
+            mostrarMensagemTemporaria("Por favor, insira o nome de ambos os jogadores.", 3000);
             return;
         }
-    }
-
+    }  */
+    
     // Zera as variáveis de performance explicitamente ao clicar em Iniciar
     performanceBrancas = 0;
     performancePretas = 0;
@@ -822,7 +822,6 @@ function handleStartGame() {
 /**
  * Lida com a mudança de modo (IA vs Humano) para mostrar/esconder as configurações de nome.
  */
-
 function handleModeChange() {
     const modo = document.getElementById("modo-jogo").value;
     const configIA = document.getElementById("config-humano-ia");
@@ -930,30 +929,6 @@ export {
     bindUIEvents
 };
 
-function carregarEstadoDeJogo(fen) {
-    console.log("DEBUG: Carregando nova posição FEN...", fen);
-    
-    // 1. Pega a instância do jogo (o cérebro)
-    const jogo = getJogoInstance(); 
-    
-    // 2. Verifica se o cérebro está pronto e injeta a nova posição
-    if (jogo && typeof jogo.load === 'function') {
-        jogo.load(fen);
-    } else {
-        console.error("Erro: O motor do jogo não aceitou o comando load().");
-        mostrarMensagemTemporaria("Erro ao carregar a posição.");
-        return;
-    }
-    
-    // 3. Atualiza o visual do tabuleiro com as peças no novo lugar
-    if (typeof criarTabuleiro === 'function') {
-        criarTabuleiro();
-    }
-    
-    // 4. Retorna para a tela principal
-    voltarAoJogo();
-}
-
 // ========================================================
 // EXPOSIÇÃO GLOBAL (FIX para Dependência Circular e Sync)
 // ========================================================
@@ -962,6 +937,6 @@ if (typeof window !== 'undefined') {
     window.voltarAoJogo = voltarAoJogo;
     window.mostrarMensagemTemporaria = mostrarMensagemTemporaria;
     window.criarTabuleiro = criarTabuleiro;
-    window.carregarEstadoDeJogo = carregarEstadoDeJogo;
+//    window.carregarEstadoDeJogo = carregarEstadoDeJogo;
     window.getJogoInstance = getJogoInstance; 
 }
