@@ -82,16 +82,22 @@ function initializeUIElements() {
 /**
  * Creates or updates the visual representation of the chessboard in the DOM.
  */
-/**
- * Creates or updates the visual representation of the chessboard in the DOM.
- */
 function criarTabuleiro() {
-    if (!tabuleiroEl) {
+    const tabuleiro = document.getElementById("tabuleiro");
+
+    if (!tabuleiro) {
         console.error("Elemento #tabuleiro não encontrado para criar o tabuleiro.");
         return;
     }
 
-    const jogo = getJogoInstance(); 
+    // 1. Apaga a imagem do cavalo
+    tabuleiro.innerHTML = "";
+
+    // 2. Remove o estilo temporário para o tabuleiro de xadrez assumir o tamanho padrão
+    tabuleiro.removeAttribute("style");
+
+    // 3. Obtém a instância do jogo
+    const jogo = (typeof getJogoInstance === 'function') ? getJogoInstance() : null; 
 
     if (!jogo) {
         console.warn("Instância de jogo não disponível ao tentar criar tabuleiro.");
@@ -585,6 +591,13 @@ function verificarXeque() {
 function mostrarManual() {
     if (mainTitleEl) mainTitleEl.style.display = "none";
     if (topControlsContainerEl) topControlsContainerEl.style.display = "none";
+
+    // Oculta a régua de configurações superiores (Suas Peças / Nível / Iniciar)
+    const configIA = document.getElementById("config-humano-ia");
+    const configHumano = document.getElementById("config-humano-humano");
+    if (configIA) configIA.style.display = "none";
+    if (configHumano) configHumano.style.display = "none";
+
     if (estadoJogoEl) estadoJogoEl.style.display = "none";
     if (boardContainerEl) boardContainerEl.style.display = "none";
     if (capturasEl) capturasEl.style.display = "none";
@@ -595,14 +608,19 @@ function mostrarManual() {
 
     if (manualEl) manualEl.style.display = "block";
 }
-
 /**
  * Shows the training problems management screen and hides all game-related elements.
  */
 function mostrarGerenciarTreinos() {
-    console.log("DEBUG: Iniciando mostrarGerenciarTreinos...");
     if (mainTitleEl) mainTitleEl.style.display = "none";
     if (topControlsContainerEl) topControlsContainerEl.style.display = "none";
+    
+    // Oculta a régua de configurações superiores (Suas Peças / Nível / Iniciar)
+    const configIA = document.getElementById("config-humano-ia");
+    const configHumano = document.getElementById("config-humano-humano");
+    if (configIA) configIA.style.display = "none";
+    if (configHumano) configHumano.style.display = "none";
+
     if (estadoJogoEl) estadoJogoEl.style.display = "none";
     if (boardContainerEl) boardContainerEl.style.display = "none";
     if (capturasEl) capturasEl.style.display = "none";
@@ -611,27 +629,11 @@ function mostrarGerenciarTreinos() {
     if (avaliacaoEl) avaliacaoEl.style.display = "none";
     if (manualEl) manualEl.style.display = "none";
 
-
     if (gerenciarTreinosEl) {
-        console.log("DEBUG: Elemento #gerenciar-treinos encontrado. Exibindo...");
         gerenciarTreinosEl.style.display = "block";
-        
-        // Verificação segura antes de chamar a função importada
         if (typeof atualizarListaProblemas === 'function') {
-            console.log("DEBUG: Chamando atualizarListaProblemas()...");
-            try {
-                atualizarListaProblemas();
-                console.log("DEBUG: atualizarListaProblemas() executada.");
-            } catch (error) {
-                console.error("DEBUG: Erro ao executar atualizarListaProblemas:", error);
-                mostrarMensagemTemporaria("Erro ao carregar lista. Verifique o console.");
-            }
-        } else {
-            console.error("DEBUG: ERRO CRÍTICO - atualizarListaProblemas não é uma função válida!");
-            mostrarMensagemTemporaria("Erro interno: Função de lista não encontrada.");
+            atualizarListaProblemas();
         }
-    } else {
-        console.error("DEBUG: Elemento #gerenciar-treinos NÃO ENCONTRADO no DOM.");
     }
 }
 
@@ -672,6 +674,13 @@ function voltarAoJogo() {
          avaliacaoEl.style.display = "none";
     }
 
+    if (gameState.modoJogo === "humano-ia") {
+        const configIA = document.getElementById("config-humano-ia");
+        if (configIA) configIA.style.display = "flex";
+    } else {
+        const configHumano = document.getElementById("config-humano-humano");
+        if (configHumano) configHumano.style.display = "flex";
+    }
 
     if (manualEl) manualEl.style.display = "none";
     if (gerenciarTreinosEl) gerenciarTreinosEl.style.display = "none";
@@ -729,7 +738,7 @@ function atualizarEstadoJogo(modeFromConfig) {
         } else {
              const nivelEl = document.getElementById("profundidade");
             const nivelTexto = nivelEl ? nivelEl.options[nivelEl.selectedIndex].text : getLevelName(currentLevel);
-            estadoJogoEl.innerHTML = `Partida Humano vs IA (${nivelTexto}): Você (${mostrarCor(gameState.corUsuario)}) vs IA (${mostrarCor(gameState.corUsuario === 'w' ? 'b' : 'w')}).`;
+            estadoJogoEl.innerHTML = `Você (${mostrarCor(gameState.corUsuario)}) vs IA (${mostrarCor(gameState.corUsuario === 'w' ? 'b' : 'w')}).`;
         }
     } else if (gameState.partidaIniciada && jogo && jogo.game_over()) {
         let resultado = "Fim de Jogo";
@@ -741,7 +750,7 @@ function atualizarEstadoJogo(modeFromConfig) {
         } else {
              const nivelEl = document.getElementById("profundidade");
             const nivelTexto = nivelEl ? nivelEl.options[nivelEl.selectedIndex].text : getLevelName(currentLevel);
-            estadoJogoEl.innerHTML = `${resultado}! Partida entre Você (${mostrarCor(gameState.corUsuario)}) e IA (${mostrarCor(gameState.corUsuario === 'w' ? 'b' : 'w')}).`;
+            estadoJogoEl.innerHTML = `${resultado}! Você (${mostrarCor(gameState.corUsuario)}) e IA (${mostrarCor(gameState.corUsuario === 'w' ? 'b' : 'w')}).`;
         }
     } else {
           if (currentMode === "humano-humano") {
@@ -749,7 +758,7 @@ function atualizarEstadoJogo(modeFromConfig) {
           } else {
               const nivelEl = document.getElementById("profundidade");
               const nivelTexto = nivelEl ? nivelEl.options[nivelEl.selectedIndex].text : getLevelName(currentLevel);
-              estadoJogoEl.innerHTML = `Pronto para Humano vs IA (${nivelTexto}). Escolha a cor e clique em Iniciar.`;
+              estadoJogoEl.innerHTML = `Escolha a cor e clique em Iniciar.`;
           }
     }
 }
@@ -964,12 +973,25 @@ function limparBannerFimDeJogo() {
     estadoEl.style.padding = "";
 }
 
+function sortearNivelRandomico() {
+    // Sortear um número entre 1 e 12
+    const nivelSorteado = Math.floor(Math.random() * 12) + 1;
+    const inputNivel = document.getElementById("nivel-ia");
+    
+    if (inputNivel) {
+        inputNivel.value = nivelSorteado;
+    }
+    
+    if (typeof window.mostrarMensagemTemporaria === 'function') {
+        window.mostrarMensagemTemporaria(`Nível sorteado: Profundidade ${nivelSorteado}`, 2000);
+    }
+}
 // Exposição ao barramento global
 if (typeof window !== 'undefined') {
     window.exibirBannerFimDeJogo = exibirBannerFimDeJogo;
     window.limparBannerFimDeJogo = limparBannerFimDeJogo;
+    window.sortearNivelRandomico = sortearNivelRandomico;
 }
-
 // ========================================================
 // EXPOSIÇÃO GLOBAL (FIX para Dependência Circular e Sync)
 // ========================================================
@@ -979,4 +1001,6 @@ if (typeof window !== 'undefined') {
     window.mostrarMensagemTemporaria = mostrarMensagemTemporaria;
     window.criarTabuleiro = criarTabuleiro;
     window.getJogoInstance = getJogoInstance; 
+    window.atualizarInfo = atualizarInfo;
+    window.atualizarEstadoJogo = atualizarEstadoJogo;
 }

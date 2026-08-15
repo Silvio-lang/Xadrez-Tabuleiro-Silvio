@@ -7,8 +7,8 @@ const problemasPadrao = [
     { nome: "Mate em 2 - Torre e Rei", fen: "8/8/8/8/8/8/5R2/5K1k w - - 0 1", solucao: "Qh1-h8#" },
     { nome: "Mate em 3 - Dama e Rei", fen: "8/8/8/8/8/6Qk/8/6K1 w - - 0 1", solucao: "Qh1-h8#" },
     { nome: "Mate em 2 - Bispo e C", fen: "8/8/8/8/8/8/5BN1/5K1k w - - 0 1", solucao: "Qh1-h8#" },
-    { nome: "Tática - Mate em 2 com Sacrifício", fen: "rnbqkb1r/pppp1ppp/5n2/5Q2/8/8/PPPPPPPP/RNB1KBNR w KQkq - 1 2", solucao: "Qh1-h8#" },
-    { nome: "Mate em 3 - Ataque com Peças Maiores", fen: "8/8/8/8/8/5p2/5Q1p/5R1K w - - 0 1", solucao: "Qh1-h8#" },
+    { nome: "Mate em 2 com Sacrifício", fen: "rnbqkb1r/pppp1ppp/5n2/5Q2/8/8/PPPPPPPP/RNB1KBNR w KQkq - 1 2", solucao: "Qh1-h8#" },
+    { nome: "Mate em 3 - Ataque Peças Maiores", fen: "8/8/8/8/8/5p2/5Q1p/5R1K w - - 0 1", solucao: "Qh1-h8#" },
     { nome: "Final de Peões - Posição Crítica", fen: "8/8/8/8/8/6p1/6Pp/6K1 w - - 0 1", solucao: "Qh1-h8#" },
     { nome: "Mate em 2 - Corredor de Mate", fen: "8/8/8/8/8/8/5RR1/5K1k w - - 0 1", solucao: "Qh1-h8#" },
     { nome: "Tática - Descoberto com Mate", fen: "rnbqkb1r/pppp1ppp/5n2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 1 2", solucao: "Qh1-h8#" },
@@ -181,4 +181,10 @@ function removerProblema(index) {
     if (typeof window.mostrarMensagemTemporaria === 'function') {
         window.mostrarMensagemTemporaria("Problema removido!", 3000);
     }
+}
+
+// Garante a exposição global para o botão do HTML encontrar a função
+if (typeof window !== 'undefined') {
+    window.salvarPosicaoAtual = salvarPosicaoAtual;
+    window.removerProblema = removerProblema;
 }

@@ -1,99 +1,216 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xadrez On-line</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-            padding: 20px;
-        }
-        h1 {
-            color: #000;
-            margin-top: 20px;
-            margin-bottom: 40px;
-            position: relative;
-            z-index: 1;
-            font-size: 2em;
-        }
-        .image-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-            width: 100%; /* Garante que o contêiner ocupe toda a largura disponível */
-        }
-        img {
-            width: 80%; /* Ajusta a largura para ser grande, mas caber na tela */
-            max-width: 300px; /* Define um tamanho máximo para evitar que fique muito grande em telas grandes */
-            height: auto; /* Mantém as proporções da imagem */
-        }
-        a.button {
-            display: inline-block;
-            padding: 10px 20px;
-            font-size: 16px;
-            color: white;
-            background-color: #4CAF50;
-            text-decoration: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        a.button:hover {
-            background-color: #45a049;
-        }
-    </style>
-</head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xadrez</title>
+  <link rel="icon" href="data:,">
+  
+  <!-- Link para o arquivo CSS externo -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Carregar uma versão estável de chess.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script>
+    // Verificar se Chess foi carregado corretamente
+    if (typeof Chess === "undefined") {
+      console.error("Erro: A biblioteca chess.js não foi carregada corretamente.");
+      document.body.innerHTML = "<h1>Erro: Não foi possível carregar a biblioteca de xadrez. Verifique sua conexão ou tente recarregar a página.</h1>";
+    } else {
+      // Definir Chess globalmente
+      window.Chess = Chess;
+      // Inicializar o jogo somente após Chess estar disponível
+      window.jogo = new Chess();
+    }
+  </script>
+  <!-- Carregar os outros scripts somente após Chess e jogo estarem definidos -->
+<script type="module" src="script.js"></script>
+  </head>
 <body>
-    <h1>XADREZ ON-LINE</h1>
-    <div class="image-container">
-        <img src="cavaloinicial.jpg" alt="Imagem inicial de um cavalo de xadrez">
+
+  <h2 id="main-title" style="text-align: center;">XADREZ ON-LINE</h2>
+
+  <div class="grupo-botoes">
+    <div class="config-container">
+      <label>
+        <select id="modo-jogo"  style="display: none;">
+          <option value="humano-ia">IA</option>
+          <option value="humano-humano">Humano</option>
+        </select>
+      </label>
+      <div id="config-humano-ia">
+        <label style="font-size: 18px;">Suas Peças:
+          <select id="cor">
+            <option value="w">Brancas</option>
+            <option value="b">Pretas</option>
+          </select>
+        </label>
+
+        <label for="nivel-ia">Nível (1 a 15):</label>
+        <input type="number" id="nivel-ia" min="1" max="15" value="5" style="width: 50px; text-align: center; font-weight: bold;">
+        <button type="button" id="btn-rand" onclick="sortearNivelRandomico()" style="padding: 2px 8px; font-weight: bold; cursor: pointer;">🎲 RAND</button>
+        </label>
+      </div>
+      <div id="config-humano-humano">
+        <label>Brancas:
+          <input type="text" id="nome-jogador1" placeholder="Nome do Jogador 1">
+        </label>
+        <label>Pretas:
+          <input type="text" id="nome-jogador2" placeholder="Nome do Jogador 2">
+        </label>
+      </div>
     </div>
-    <a href="jogo.html" class="button">Iniciar</a>
+  </div>
+
+  <div class="grupo-botoes top-controls-container">
+    <button id="btn-iniciar">🎲 INICIAR</button>
+    <button id="btn-voltar">◀</button>
+    <button id="btn-avancar">▶</button>
+    <!--   <button id="btn-retomar">✔️ RETOMAR</button> -->
+    <button id="btn-manual">📘 Instruções</button>
+    <button id="botao-problema-mate">🧩 ESTUDOS</button>   </div>
+    <!-- Botão mantido oculto para compatibilidade com o circuito do ui.js -->
+    <button id="btn-confirmar" style="display: none;">Jogue</button>
+
+  <div id="estado-jogo">Selecione o modo de jogo para começar.</div>
+
+  <div id="mouse-coord"></div>
+
+<div id="tabuleiro" class="board-container" style="width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center;">
+    <img id="imagem-espera" src="cavaloinicial.jpg" alt="Aguardando início" style="width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important; object-fit: cover; display: block;">
+</div>
+  <div id="capturas">
+    Brancas capturaram: <br>
+    Pretas capturaram:
+  </div>
+  <div id="sugestoes">
+    <div class="sugestoes-container">
+      <button id="botao-dicas" onclick="sugerirJogadas()">💡 Dicas</button>
+      <strong>Dicas da IA:</strong>
+      <div class="linha-sugestoes" id="sugestoes-linha"></div>
+    </div>
+  </div>
+  <div id="avaliacao">Nota do lance: 0 pontos.</div>
+  <div id="info"></div>
+  <div id="temp-message-area"></div>
+
+  <div id="manual">
+    <h2>Instruções</h2>
+    <p>Este Xadrez Online utiliza uma inteligência artificial baseada no Stockfish-16.1-lite.</p>
+    <ul>
+      <linha><strong>Instruções para uso::</strong></linha>
+      <li>Desloque a tela para cima para ver mais informações sobre a partida.</li>
+      <li>Utilize o ChatBot para conversar sobre este aplicativo, e sobre Xadrez.</li>
+      <li>Escolha a cor das suas peças,o nível da IA, e clique em “Iniciar”.</li>
+      <li>Clique na peça e depois no destino para movimentá-la.</li>
+      <li>Clique em [Dicas] para sugestões da IA para sua jogada.</li>
+      <li>Use os botões “◀” e “▶” para rever e analisar os lances do jogo.</li>
+      <li>Pressione [RETOMAR] para prosseguir jogando de onde estiver.</li>
+      <li>Inclua o jogo em andamento entre os problemas a estudar em [ESTUDOS].</li>
+      <li>Monte uma posição e dê um nome à posição de jogo que  você salvou.</li>
+      <br></br>
+      <linha><strong>Nível de Dificuldade (1 a 15): Define a profundidade de cálculo da IA.</strong></linha>
+      <li>Níveis 1 a 3: Resposta instantânea, ideal para iniciantes ou treinos rápidos.</li>
+      <li>Níveis 4 a 8: Nível intermediário e de clube, com visão tática sólida.</li>
+      <li>Níveis 9 a 15: Análise profunda e cálculo tático elevado.</li>
+      <li>Botão 🎲 RAND: Profundidade aleatória para a partida.</li>
+      <li></li>
+      <li>
+       <strong>Jogar à distância pela WEB com oponente humano:</strong>
+        <li>
+         <a href="http://xadrez-tabuleiro-silvio.onrender.com" target="_blank">
+         http://xadrez-tabuleiro-silvio.onrender.com </a>
+       </li>
+      <li><strong>Sugestões: (Telegram: 't.me/SilvioAurich')</strong></li>
+    </ul>
+    <div style="text-align: center; width: 100%; margin-top: 20px;">
+        <button onclick="voltarAoJogo()">⬅️ Voltar ao Jogo</button>
+    </div>
+  </div>
+
+<div id="gerenciar-treinos" style="display: none; text-align: center;">
+    
+    <!-- 1. Título do Modal -->
+    <h2>Gerenciar Treinos</h2>
+
+    <!-- 2. Bloco de Ações Agrupadas (Abaixo do Título) -->
+    <div style="margin: 15px 0; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+        <button id="btn-montar-posicao" onclick="abrirEditorPosicao()">🛠️ Montar Posição</button>
+        <button type="button" onclick="salvarPosicaoAtual()">Salvar Posição Atual</button>
+    </div>
+
+    <!-- 3. Lista de Posições/Problemas Salvos (gerada dinamicamente) -->
+    <div id="lista-problemas"></div>
+
+    <!-- 4. Botão de Retorno -->
+    <button onclick="voltarAoJogo()" style="margin-top: 20px;">Voltar ao Jogo</button>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL DE MONTAGEM E EDIÇÃO DE POSIÇÃO (FEN)              -->
+<!-- ======================================================== -->
+<div id="modal-editor-posicao" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+  <div style="background: #fff; padding: 20px; border-radius: 8px; max-width: 500px; width: 90%; text-align: center;">
+    
+    <h3>Montador de Posição</h3>
+    
+    <!-- Botões de Carga Inicial -->
+    <div style="margin-bottom: 15px;">
+      <button onclick="carregarFENnoEditor('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')">Posição Inicial</button>
+      <button onclick="carregarPosicaoAtualNoEditor()">Usar Jogo Atual</button>
+      <button onclick="carregarFENnoEditor('8/8/8/8/8/8/8/8 w - - 0 1')">Limpar Tudo</button>
+    </div>
+
+    <!-- Área onde o tabuleiro de edição será desenhado -->
+    <div id="tabuleiro-editor" style="display: grid; grid-template-columns: repeat(8, 1fr); width: 320px; height: 320px; margin: 0 auto; border: 2px solid #333;"></div>
+
+<!-- Paleta de Peças com Códigos HTML Universais -->
+    <div id="paleta-pecas" style="margin-top: 15px; font-size: 1.5rem; display: flex; justify-content: center; gap: 8px; user-select: none;">
+      <!-- Peças Brancas -->
+      <span onclick="selecionarPecaPaleta('w','p')" style="cursor:pointer;" title="Peão Branco">&#9817;</span>
+      <span onclick="selecionarPecaPaleta('w','r')" style="cursor:pointer;" title="Torre Branca">&#9814;</span>
+      <span onclick="selecionarPecaPaleta('w','n')" style="cursor:pointer;" title="Cavalo Branco">&#9816;</span>
+      <span onclick="selecionarPecaPaleta('w','b')" style="cursor:pointer;" title="Bispo Branco">&#9815;</span>
+      <span onclick="selecionarPecaPaleta('w','q')" style="cursor:pointer;" title="Dama Branca">&#9813;</span>
+      <span onclick="selecionarPecaPaleta('w','k')" style="cursor:pointer;" title="Rei Branco">&#9812;</span>
+      
+      <span style="color: #888; margin: 0 4px;">|</span>
+      
+      <!-- Peças Pretas -->
+      <span onclick="selecionarPecaPaleta('b','p')" style="cursor:pointer;" title="Peão Preto">&#9823;</span>
+      <span onclick="selecionarPecaPaleta('b','r')" style="cursor:pointer;" title="Torre Preta">&#9820;</span>
+      <span onclick="selecionarPecaPaleta('b','n')" style="cursor:pointer;" title="Cavalo Preto">&#9822;</span>
+      <span onclick="selecionarPecaPaleta('b','b')" style="cursor:pointer;" title="Bispo Preto">&#9821;</span>
+      <span onclick="selecionarPecaPaleta('b','q')" style="cursor:pointer;" title="Dama Preta">&#9819;</span>
+      <span onclick="selecionarPecaPaleta('b','k')" style="cursor:pointer;" title="Rei Preto">&#9818;</span>
+      
+      <span style="color: #888; margin: 0 4px;">|</span>
+      
+      <!-- Borracha / Remover -->
+      <span onclick="selecionarPecaPaleta(null, null)" style="cursor:pointer; color: red;" title="Remover Peça">❌</span>
+    </div>
+
+    <!-- Display da FEN Resultante -->
+    <div style="margin-top: 15px;">
+      <label><strong>FEN Gerada:</strong></label><br>
+      <input type="text" id="fen-resultado" style="width: 100%; font-family: monospace; text-align: center;" readonly />
+    </div>
+
+    <!-- Ações Finais -->
+    <div style="margin-top: 15px; display: flex; justify-content: space-around;">
+      <button onclick="aplicarPosicaoMontadaNoJogo()">Jogar Esta Posição</button>
+      <button onclick="fecharEditorPosicao()">Cancelar</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="editor-posicao.js"></script>
 </body>
+
+<script 
+ async 
+ src="https://app.gptmaker.ai/widget/3E0F14D02CF331C2D17D0EF466D45D59/float.js">
+</script>
+        
 </html>
