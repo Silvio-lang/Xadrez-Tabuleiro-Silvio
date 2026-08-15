@@ -82,6 +82,9 @@ function initializeUIElements() {
 /**
  * Creates or updates the visual representation of the chessboard in the DOM.
  */
+/**
+ * Creates or updates the visual representation of the chessboard in the DOM.
+ */
 function criarTabuleiro() {
     if (!tabuleiroEl) {
         console.error("Elemento #tabuleiro não encontrado para criar o tabuleiro.");
@@ -97,32 +100,30 @@ function criarTabuleiro() {
 
     const gameState = getGameState(); 
 
-    // Reset de variáveis se for um jogo novo (histórico vazio ou reiniciado)
-    // Isso garante que as pontuações totalizadas sejam zeradas no início da partida.
+    // Reset de variáveis se for um jogo novo
     if (gameState.historicoJogadas.length === 0) {
         performanceBrancas = 0;
         performancePretas = 0;
         notaUltimaBrancas = 0;
         notaUltimaPretas = 0;
-        scoreEstavelAnterior = 30; // Volta para o valor base inicial do xadrez (~0.3 vantagem branca inicial)
+        scoreEstavelAnterior = 30;
         if (timerEstabilizacao) clearTimeout(timerEstabilizacao);
     }
 
     tabuleiroEl.innerHTML = ''; 
 
-    // Adicionar/Remover classe de bloqueio visual
-    if (aguardandoConfirmacao) {
-        tabuleiroEl.classList.add("bloqueado");
-    } else {
-        tabuleiroEl.classList.remove("bloqueado");
-    }
-    
-    // Controla a visibilidade do botão 'Jogue'
+    // ========================================================
+    // BLOCO DE LIBERAÇÃO VISUAL E REMOÇÃO DO BOTÃO
+    // ========================================================
+    tabuleiroEl.classList.remove("bloqueado");
+
     if (btnConfirmarEl) {
-        btnConfirmarEl.style.display = aguardandoConfirmacao ? "inline-block" : "none";
+        btnConfirmarEl.style.display = "none";
     }
+    // ========================================================
 
     const perspective = gameState.corUsuario === 'w' ? 'white' : 'black';
+    // ... segue o restante da sua função original normalmente ...
     const files = perspective === 'white' ? ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] : ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'];
     const ranks = perspective === 'white' ? ['8', '7', '6', '5', '4', '3', '2', '1'] : ['1', '2', '3', '4', '5', '6', '7', '8'];
 
@@ -204,17 +205,20 @@ function handleSquareClick(posicao) {
             moverPeca(casaSelecionada, posicao, movimentoParaCasa.promotion); 
             setCasaSelecionada(null); 
             
+            // Dispara a IA automaticamente sem travar a tela nem pedir o botão
             if (gameState.modoJogo === "humano-ia" && jogo.turn() !== gameState.corUsuario && !jogo.game_over()) {
-                pausarParaConfirmacao();
+                if (typeof fazerJogadaIA === 'function') {
+                    fazerJogadaIA();
+                }
             }
 
         } else {
             const peça = jogo.get(posicao);
-             if (peça && peça.color === jogo.turn()) {
+            if (peça && peça.color === jogo.turn()) {
                 setCasaSelecionada(posicao); 
-             } else {
+            } else {
                 setCasaSelecionada(null); 
-             }
+            }
         }
     }
     criarTabuleiro();
@@ -224,10 +228,7 @@ function handleSquareClick(posicao) {
  * Pausa o fluxo do jogo e exibe o botão de confirmação.
  */
 function pausarParaConfirmacao() {
-    aguardandoConfirmacao = true; 
-    if (btnConfirmarEl) {
-        mostrarMensagemTemporaria("Confirme sua jogada! Clique em 'Jogue'.", 2000);
-    }
+    aguardandoConfirmacao = false; 
     criarTabuleiro(); 
 }
 
@@ -786,6 +787,9 @@ function handleStartGame() {
     const nomeJogador1El = document.getElementById("nome-jogador1");
     const nomeJogador2El = document.getElementById("nome-jogador2");
 
+    const seletorEl = document.getElementById("modo-jogo"); // Ou o ID que lê a opção
+    const modoSelecionado = seletorEl ? seletorEl.value : "ia"; // Se não existir, assume padrão (ex: 'ia')
+
     const modo = modoJogoEl.value;
     const cor = corEl.value;
     const nome1 = nomeJogador1El.value;
@@ -828,6 +832,12 @@ function handleModeChange() {
     const configHumano = document.getElementById("config-humano-humano");
     const sugestoesSection = document.getElementById("sugestoes");
     const avaliacaoSection = document.getElementById("avaliacao");
+
+    const modoEl = document.getElementById("modo-jogo"); // Ou o ID utilizado no seu código
+    if (!modoEl) {
+        console.warn("DEBUG: Seletor de modo não encontrado no HTML. Ignorando alteração visual.");
+        return; // Interrompe a função com segurança sem travar o restante do programa
+    }
 
     if (modo === "humano-ia") {
         configIA.style.display = 'flex';
@@ -929,6 +939,37 @@ export {
     bindUIEvents
 };
 
+// Exibe o banner permanente de Fim de Jogo (Fundo vermelho, texto branco maiúsculo)
+function exibirBannerFimDeJogo(texto) {
+    const estadoEl = document.getElementById("estado-jogo");
+    if (!estadoEl) return;
+
+    estadoEl.style.backgroundColor = "#d9534f"; // Vermelho
+    estadoEl.style.color = "#ffffff";           // Texto branco
+    estadoEl.style.fontWeight = "bold";
+    estadoEl.style.padding = "10px";
+    estadoEl.style.borderRadius = "5px";
+    estadoEl.style.textAlign = "center";
+    estadoEl.style.textTransform = "uppercase";
+    estadoEl.innerHTML = texto.toUpperCase();
+}
+
+// Restaura o painel ao estado normal quando um novo jogo/lance for iniciado
+function limparBannerFimDeJogo() {
+    const estadoEl = document.getElementById("estado-jogo");
+    if (!estadoEl) return;
+
+    estadoEl.style.backgroundColor = "";
+    estadoEl.style.color = "";
+    estadoEl.style.padding = "";
+}
+
+// Exposição ao barramento global
+if (typeof window !== 'undefined') {
+    window.exibirBannerFimDeJogo = exibirBannerFimDeJogo;
+    window.limparBannerFimDeJogo = limparBannerFimDeJogo;
+}
+
 // ========================================================
 // EXPOSIÇÃO GLOBAL (FIX para Dependência Circular e Sync)
 // ========================================================
@@ -937,6 +978,5 @@ if (typeof window !== 'undefined') {
     window.voltarAoJogo = voltarAoJogo;
     window.mostrarMensagemTemporaria = mostrarMensagemTemporaria;
     window.criarTabuleiro = criarTabuleiro;
-//    window.carregarEstadoDeJogo = carregarEstadoDeJogo;
     window.getJogoInstance = getJogoInstance; 
 }

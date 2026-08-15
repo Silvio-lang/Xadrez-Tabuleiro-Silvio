@@ -91,3 +91,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log("Eventos ligados. Aplicação pronta.");
 });
+
+// ========================================================
+// INJEÇÃO DE POSIÇÕES (TREINOS E PROBLEMAS)
+// ========================================================
+window.carregarEstadoDeJogo = function(fen) {
+    console.log("DEBUG: Injetando nova posição FEN no motor...", fen);
+    
+    let motorDaPartida = null;
+
+    // 1. Scanner: Tenta localizar o motor do xadrez por todos os caminhos possíveis
+    if (typeof window.getJogoInstance === 'function') {
+        motorDaPartida = window.getJogoInstance();
+    } else if (typeof getJogoInstance === 'function') {
+        motorDaPartida = getJogoInstance();
+    } else if (typeof window.game !== 'undefined') {
+        motorDaPartida = window.game;
+    } else if (typeof game !== 'undefined') {
+        motorDaPartida = game;
+    }
+
+    // 2. Acopla a FEN ao motor
+    if (motorDaPartida && typeof motorDaPartida.load === 'function') {
+        motorDaPartida.load(fen);
+        console.log("SUCESSO: Motor carregou a FEN perfeitamente!");
+    } else {
+        console.error("FALHA: Motor do xadrez não foi localizado no barramento.");
+        return;
+    }
+
+    // 3. Redesenha a tela do tabuleiro com a nova posição
+    if (typeof window.criarTabuleiro === 'function') {
+        window.criarTabuleiro();
+    } else if (typeof criarTabuleiro === 'function') {
+        criarTabuleiro();
+    } else {
+        console.error("FALHA: Função criarTabuleiro não foi localizada.");
+    }
+
+    // 4. Retorna para a tela principal
+    if (typeof window.voltarAoJogo === 'function') {
+        window.voltarAoJogo();
+    }
+};
