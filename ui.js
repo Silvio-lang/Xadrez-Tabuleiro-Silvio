@@ -58,26 +58,18 @@ const TEMPO_ESTABILIZACAO = 2500;
  * Initializes UI elements by getting references from the DOM.
  */
 function initializeUIElements() {
-    mainTitleEl = document.getElementById("main-title"); 
     tabuleiroEl = document.getElementById("tabuleiro");
-    infoEl = document.getElementById("info");
     estadoJogoEl = document.getElementById("estado-jogo");
-    avaliacaoEl = document.getElementById("avaliacao");
-    sugestoesEl = document.getElementById("sugestoes");
-    sugestoesLinhaEl = document.getElementById("sugestoes-linha");
-    tempMessageAreaEl = document.getElementById("temp-message-area");
-    manualEl = document.getElementById("manual");
-    gerenciarTreinosEl = document.getElementById("gerenciar-treinos");
+    infoEl = document.getElementById("info");
     capturasEl = document.getElementById("capturas");
-    topControlsContainerEl = document.querySelector(".top-controls-container"); 
-    boardContainerEl = document.querySelector(".board-container"); 
-    btnConfirmarEl = document.getElementById("btn-confirmar"); 
+    tempMessageAreaEl = document.getElementById("temp-message-area");
+    btnConfirmarEl = document.getElementById("btn-confirmar");
 
-    if (!mainTitleEl || !tabuleiroEl || !infoEl || !estadoJogoEl || !avaliacaoEl || !sugestoesEl || !sugestoesLinhaEl || !tempMessageAreaEl || !manualEl || !gerenciarTreinosEl || !capturasEl || !topControlsContainerEl || !boardContainerEl || !btnConfirmarEl) {
-        console.error("Erro: Um ou mais elementos da UI não foram encontrados. Verifique o jogo.html.");
+    // Validação focada exclusivamente no componente crítico do sistema
+    if (!tabuleiroEl) {
+        console.warn("Aviso: O elemento do tabuleiro não foi encontrado no HTML.");
     } 
 }
-
 
 /**
  * Creates or updates the visual representation of the chessboard in the DOM.
@@ -394,104 +386,89 @@ function formatarParaPeoes(valorCentipeoes) {
     return `${sinal}${valor.toFixed(2)}`;
 }
 
-/**
- * Updates the evaluation display area based on the current score from Stockfish.
- * ATUALIZADO: Implementa a lógica de ESTABILIZAÇÃO (Debounce) antes de calcular performance.
- */
+// ========================================================
+// ATUALIZAÇÃO DA AVALIAÇÃO E PERFORMANCE
+// ========================================================
 function atualizarAvaliacao() {
     const gameState = getGameState();
     const jogo = getJogoInstance();
 
+    const el = document.getElementById("avaliacao") || avaliacaoEl;
+    if (!el) return;
+    el.style.display = "";
+
     if (gameState.modoJogo !== "humano-ia") {
-        if (avaliacaoEl) avaliacaoEl.innerHTML = "Nota do lance: -.";
+        el.innerHTML = "Nota do lance: -.";
         return;
     }
 
-    if (!avaliacaoEl) return;
-
-    // 1. Obtém o score bruto que acabou de chegar (instável)
     const score = getCurrentScore();
-    if (score === null) return;
+    if (score === null || score === undefined) return;
 
-    // 2. Atualiza a interface VISUAL imediatamente (para você ver que está "pensando")
-    // mas ainda NÃO conta para o score oficial.
-    renderizarPlacar(score, false); // false = ainda não estável
-
-    // 3. Lógica de Estabilização (O Árbitro espera o peso parar)
-    if (timerEstabilizacao) {
-        clearTimeout(timerEstabilizacao); // Zera se chegou nova mensagem (instabilidade)
+    // Se o score retornado for idêntico ao anterior, ignora a atualização para não zerar o delta
+    if (score === scoreEstavelAnterior && gameState.partidaIniciada) {
+        renderizarPlacar(score, true);
+        return;
     }
 
-    // Inicia contagem de 2.5s de silêncio
+    // Identifica de quem foi o LANCE QUE GEROU essa nova avaliação:
+    // Se agora é a vez das Pretas ('b'), as Brancas acabaram de jogar.
+    // Se agora é a vez das Brancas ('w'), a IA (Pretas) acabou de jogar.
+    const quemAcabouDeJogar = (jogo && jogo.turn() === 'b') ? 'w' : 'b';
+
+    // Cancela o temporizador anterior para aplicar a nova medição
+    if (timerEstabilizacao) clearTimeout(timerEstabilizacao);
+
     timerEstabilizacao = setTimeout(() => {
-        // --- O CÓDIGO AQUI DENTRO SÓ RODA SE FICAR 2.5s SEM MUDANÇA ---
-        
         const scoreDefinitivo = score;
-        
-        // Calcula o "Arremesso" (Diferença entre onde parou e de onde saiu)
         const delta = scoreDefinitivo - scoreEstavelAnterior;
 
-        // Quem jogou por último? (Quem arremessou o peso?)
-        // Se a vez é das Pretas ('b'), quem jogou foi Brancas.
-        // Se a vez é das Brancas ('w'), quem jogou foi Pretas.
-        if (jogo && jogo.turn() === 'b') {
-            // Turno das Pretas = Brancas jogaram e agora estabilizou
+        if (quemAcabouDeJogar === 'w') {
             notaUltimaBrancas = delta;
             performanceBrancas += delta;
-        } else if (jogo && jogo.turn() === 'w') {
-            // Turno das Brancas = Pretas jogaram e agora estabilizou
-            // Para pretas, delta NEGATIVO é bom (ex: ir de 30 para -50 é ótimo)
-            // Multiplicamos por -1 para mostrar pontos positivos quando elas jogam bem
+        } else {
+            // Para as pretas, ganho de posição significa queda no score das brancas
             const pontosPretas = delta * -1;
             notaUltimaPretas = pontosPretas;
             performancePretas += pontosPretas;
         }
 
-        // Atualiza a base para o próximo lance
         scoreEstavelAnterior = scoreDefinitivo;
-
-        // Atualiza o placar visualmente, agora com os novos totais confirmados
         renderizarPlacar(scoreDefinitivo, true);
 
     }, TEMPO_ESTABILIZACAO);
 }
 
-/**
- * Função auxiliar para desenhar o HTML do placar.
- * @param {number} currentScore - O score atual (estável ou não)
- * @param {boolean} estavel - Se o valor é definitivo ou ainda está calculando
- */
 function renderizarPlacar(currentScore, estavel) {
-    if (!avaliacaoEl) return;
+    const el = document.getElementById("avaliacao") || avaliacaoEl;
+    if (!el) return;
+    el.style.display = "";
 
-    // Converte o score principal para peões se for numérico
-    let textoAvaliacao;
-    if (Math.abs(currentScore) >= 10000) {
-        const movesToMate = Math.floor((10001 - Math.abs(currentScore)) / 2) + 1;
-        textoAvaliacao = `Mate em ${movesToMate}`;
-    } else {
-        textoAvaliacao = `${formatarParaPeoes(currentScore)}`; // Exibe como 0.35, -1.20, etc.
+    const jogo = getJogoInstance();
+    const totalLances = jogo ? jogo.history().length : 0;
+    const numeroJogadas = Math.floor(totalLances / 2);
+
+    // 1. Traduz o número do Stockfish para linguagem humana
+    let textoSituacao = "Jogo equilibrado";
+    const peoes = Math.abs(currentScore / 100).toFixed(1);
+
+    if (currentScore > 50) {
+        textoSituacao = `Brancas estão melhores (+${peoes} peões)`;
+    } else if (currentScore < -50) {
+        textoSituacao = `Pretas estão melhores (+${peoes} peões)`;
     }
 
-    let indicadorEstabilidade = estavel ? "" : " (Calculando...)";
+    // 2. Indicador de processamento da IA
+    const estadoProcessamento = estavel ? "" : " ⏳ (analisando...)";
 
-    // Formatação visual
-    const estiloCalculando = estavel ? "" : "color: #888; font-style: italic;";
-
-    // Formata os valores de performance dividindo por 100
-    const strUltB = formatarParaPeoes(notaUltimaBrancas);
-    const strPerfB = formatarParaPeoes(performanceBrancas);
-    const strUltP = formatarParaPeoes(notaUltimaPretas);
-    const strPerfP = formatarParaPeoes(performancePretas);
-
-    avaliacaoEl.innerHTML = `
-        <div style="${estiloCalculando}">
-            <strong>Avaliação:</strong> ${textoAvaliacao}${indicadorEstabilidade}
+    // 3. Montagem de um painel limpo para o usuário
+    el.innerHTML = `
+        <div style="font-size: 1.05em; margin-bottom: 4px;">
+            <strong>Situação:</strong> ${textoSituacao}${estadoProcessamento}
         </div>
-        <div style="margin-top: 5px; padding-top: 5px; border-top: 1px solid #ccc; font-size: 0.9em;">
-            <strong>Performance (Definitiva):</strong><br>
-            ⚪ Brancas: Última ${strUltB} | Total ${strPerfB}<br>
-            ⚫ Pretas: Última ${strUltP} | Total ${strPerfP}
+        <div style="font-size: 0.9em; color: #555;">
+            <strong>A jogar:</strong> ${(jogo && jogo.turn() === 'w') ? 'Sua vez (Brancas)' : 'Vez da IA (Pretas)'} | 
+            <strong>Jogada nº:</strong> ${numeroJogadas}
         </div>
     `;
 }
@@ -584,109 +561,54 @@ function verificarXeque() {
     }
 }
 
-
-/**
- * Shows the manual/instructions screen and hides all game-related elements.
- */
-function mostrarManual() {
-    if (mainTitleEl) mainTitleEl.style.display = "none";
-    if (topControlsContainerEl) topControlsContainerEl.style.display = "none";
-
-    // Oculta a régua de configurações superiores (Suas Peças / Nível / Iniciar)
-    const configIA = document.getElementById("config-humano-ia");
-    const configHumano = document.getElementById("config-humano-humano");
-    if (configIA) configIA.style.display = "none";
-    if (configHumano) configHumano.style.display = "none";
-
-    if (estadoJogoEl) estadoJogoEl.style.display = "none";
-    if (boardContainerEl) boardContainerEl.style.display = "none";
-    if (capturasEl) capturasEl.style.display = "none";
-    if (sugestoesEl) sugestoesEl.style.display = "none";
-    if (infoEl) infoEl.style.display = "none";
-    if (avaliacaoEl) avaliacaoEl.style.display = "none";
-    if (gerenciarTreinosEl) gerenciarTreinosEl.style.display = "none";
-
-    if (manualEl) manualEl.style.display = "block";
-}
-/**
- * Shows the training problems management screen and hides all game-related elements.
- */
-function mostrarGerenciarTreinos() {
-    if (mainTitleEl) mainTitleEl.style.display = "none";
-    if (topControlsContainerEl) topControlsContainerEl.style.display = "none";
-    
-    // Oculta a régua de configurações superiores (Suas Peças / Nível / Iniciar)
-    const configIA = document.getElementById("config-humano-ia");
-    const configHumano = document.getElementById("config-humano-humano");
-    if (configIA) configIA.style.display = "none";
-    if (configHumano) configHumano.style.display = "none";
-
-    if (estadoJogoEl) estadoJogoEl.style.display = "none";
-    if (boardContainerEl) boardContainerEl.style.display = "none";
-    if (capturasEl) capturasEl.style.display = "none";
-    if (sugestoesEl) sugestoesEl.style.display = "none";
-    if (infoEl) infoEl.style.display = "none";
-    if (avaliacaoEl) avaliacaoEl.style.display = "none";
-    if (manualEl) manualEl.style.display = "none";
-
-    if (gerenciarTreinosEl) {
-        gerenciarTreinosEl.style.display = "block";
-        if (typeof atualizarListaProblemas === 'function') {
-            atualizarListaProblemas();
-        }
-    }
-}
-
 /**
  * Returns to the main game screen from the manual or training screens.
  */
 function voltarAoJogo() {
-    const gameState = getGameState();
+  // 1. Desliga todas as telas secundárias acionadas pela alternarTela()
+  const telasSecundarias = [
+    "manual", 
+    "gerenciar-treinos", 
+    "modal-editor-posicao", 
+    "estudos", 
+    "posicoes-salvas"
+  ];
+  
+  telasSecundarias.forEach(id => {
+    const tela = document.getElementById(id);
+    if (tela) tela.style.display = "none";
+  });
 
-    if (mainTitleEl) mainTitleEl.style.display = "block";
-    if (topControlsContainerEl) topControlsContainerEl.style.display = "flex";
-    if (estadoJogoEl) estadoJogoEl.style.display = "block";
-    if (boardContainerEl) {
-        boardContainerEl.style.display = "block";
-        if (tabuleiroEl) {
-            tabuleiroEl.style.display = "grid";
-            tabuleiroEl.style.visibility = "visible";
-            criarTabuleiro();
-        } 
-    }
+  // 2. Reativa todos os blocos do jogo ocultados pela alternarTela()
+  const blocosJogo = [
+    "painel-controles-topo", 
+    "tabuleiro", 
+    "estado-jogo", 
+    "mouse-coord", 
+    "capturas", 
+    "sugestoes", 
+    "sugestoes-linha", 
+    "avaliacao", 
+    "info", 
+    "temp-message-area"
+  ];
 
-    if (capturasEl) capturasEl.style.display = "block";
+  blocosJogo.forEach(id => {
+    const bloco = document.getElementById(id);
+    if (bloco) bloco.style.display = ""; // Restaura a exibição padrão do CSS
+  });
 
-    if (sugestoesEl && gameState.modoJogo === "humano-ia") {
-         sugestoesEl.style.display = "block";
-         mostrarSugestoes(getSugestoesIA());
-    } else if (sugestoesEl) {
-         sugestoesEl.style.display = "none";
-    }
+  // 3. Reajusta a geometria do tabuleiro
+  if (window.board && typeof window.board.resize === "function") {
+    window.board.resize();
+  }
+}
+// Garante a exposição global
+window.voltarAoJogo = voltarAoJogo;
 
-    if (infoEl) infoEl.style.display = "block";
-
-
-    if (avaliacaoEl && gameState.modoJogo === "humano-ia") {
-         avaliacaoEl.style.display = "block";
-         atualizarAvaliacao();
-    } else if (avaliacaoEl) {
-         avaliacaoEl.style.display = "none";
-    }
-
-    if (gameState.modoJogo === "humano-ia") {
-        const configIA = document.getElementById("config-humano-ia");
-        if (configIA) configIA.style.display = "flex";
-    } else {
-        const configHumano = document.getElementById("config-humano-humano");
-        if (configHumano) configHumano.style.display = "flex";
-    }
-
-    if (manualEl) manualEl.style.display = "none";
-    if (gerenciarTreinosEl) gerenciarTreinosEl.style.display = "none";
-
-    atualizarInfo();
-    atualizarEstadoJogo();
+// Garante a conexão direta no barramento global
+if (typeof window !== 'undefined') {
+    window.voltarAoJogo = voltarAoJogo;
 }
 
 /**
@@ -724,21 +646,26 @@ function atualizarInfo() {
  * Updates the game state display (mode, players, AI level).
  */
 function atualizarEstadoJogo(modeFromConfig) {
-    if (!estadoJogoEl) return;
+    // Busca o elemento diretamente pelo ID para evitar travamento por variável nula
+    const el = document.getElementById("estado-jogo") || estadoJogoEl;
+    if (!el) return;
+
+    // Garante a visibilidade do mostrador
+    el.style.display = "";
+
     const jogo = getJogoInstance();
     const gameState = getGameState();
     const currentLevel = getCurrentLevel();
 
     const currentMode = modeFromConfig || gameState.modoJogo;
 
-
     if (gameState.partidaIniciada && jogo && !jogo.game_over()) {
         if (currentMode === "humano-humano") {
-            estadoJogoEl.innerHTML = `Partida Humano vs Humano: ${gameState.nomeJogador1 || "Jogador 1"} (Br) vs ${gameState.nomeJogador2 || "Jogador 2"} (Pr).`;
+            el.innerHTML = `Partida Humano vs Humano: ${gameState.nomeJogador1 || "Jogador 1"} (Br) vs ${gameState.nomeJogador2 || "Jogador 2"} (Pr).`;
         } else {
-             const nivelEl = document.getElementById("profundidade");
+            const nivelEl = document.getElementById("profundidade");
             const nivelTexto = nivelEl ? nivelEl.options[nivelEl.selectedIndex].text : getLevelName(currentLevel);
-            estadoJogoEl.innerHTML = `Você (${mostrarCor(gameState.corUsuario)}) vs IA (${mostrarCor(gameState.corUsuario === 'w' ? 'b' : 'w')}).`;
+            el.innerHTML = `Você (${mostrarCor(gameState.corUsuario)}) vs IA (${mostrarCor(gameState.corUsuario === 'w' ? 'b' : 'w')}).`;
         }
     } else if (gameState.partidaIniciada && jogo && jogo.game_over()) {
         let resultado = "Fim de Jogo";
@@ -746,20 +673,20 @@ function atualizarEstadoJogo(modeFromConfig) {
         else if (jogo.in_draw()) resultado = "Empate";
 
         if (currentMode === "humano-humano") {
-            estadoJogoEl.innerHTML = `${resultado}! Partida entre ${gameState.nomeJogador1 || "Jogador 1"} e ${gameState.nomeJogador2 || "Jogador 2"}.`;
+            el.innerHTML = `${resultado}! Partida entre ${gameState.nomeJogador1 || "Jogador 1"} e ${gameState.nomeJogador2 || "Jogador 2"}.`;
         } else {
-             const nivelEl = document.getElementById("profundidade");
+            const nivelEl = document.getElementById("profundidade");
             const nivelTexto = nivelEl ? nivelEl.options[nivelEl.selectedIndex].text : getLevelName(currentLevel);
-            estadoJogoEl.innerHTML = `${resultado}! Você (${mostrarCor(gameState.corUsuario)}) e IA (${mostrarCor(gameState.corUsuario === 'w' ? 'b' : 'w')}).`;
+            el.innerHTML = `${resultado}! Você (${mostrarCor(gameState.corUsuario)}) e IA (${mostrarCor(gameState.corUsuario === 'w' ? 'b' : 'w')}).`;
         }
     } else {
-          if (currentMode === "humano-humano") {
-              estadoJogoEl.innerHTML = "Pronto para Humano vs Humano. Preencha os nomes e clique em Iniciar.";
-          } else {
-              const nivelEl = document.getElementById("profundidade");
-              const nivelTexto = nivelEl ? nivelEl.options[nivelEl.selectedIndex].text : getLevelName(currentLevel);
-              estadoJogoEl.innerHTML = `Escolha a cor e clique em Iniciar.`;
-          }
+        if (currentMode === "humano-humano") {
+            el.innerHTML = "Pronto para Humano vs Humano. Preencha os nomes e clique em Iniciar.";
+        } else {
+            const nivelEl = document.getElementById("profundidade");
+            const nivelTexto = nivelEl ? nivelEl.options[nivelEl.selectedIndex].text : getLevelName(currentLevel);
+            el.innerHTML = `Escolha a cor e clique em Iniciar.`;
+        }
     }
 }
 
@@ -767,15 +694,22 @@ function atualizarEstadoJogo(modeFromConfig) {
  * Displays the AI's move suggestions in the designated UI area.
  */
 function mostrarSugestoes(suggestions) {
-     if (!sugestoesLinhaEl) return;
+    // Busca direta do elemento na tela para evitar dependência de variáveis nulas
+    const el = document.getElementById("sugestoes-linha") || sugestoesLinhaEl;
+    if (!el) return;
+
+    // Garante que o painel de dicas fique visível
+    el.style.display = "";
+
     if (suggestions && suggestions.length > 0) {
-        const sugestoesTexto = suggestions.slice(0, 3).map(s => `${s.slice(0, 2)} → ${s.slice(2, 4)}`).join(", ");
-        sugestoesLinhaEl.innerHTML = `<span>Sugestões: ${sugestoesTexto}</span>`;
+        const sugestoesTexto = suggestions.slice(0, 3)
+            .map(s => `${s.slice(0, 2)} → ${s.slice(2, 4)}`)
+            .join(", ");
+        el.innerHTML = `<span>Sugestões: ${sugestoesTexto}</span>`;
     } else {
-        sugestoesLinhaEl.innerHTML = "<span>Sem sugestões disponíveis.</span>";
+        el.innerHTML = "<span>Sem sugestões disponíveis no momento.</span>";
     }
 }
-
 /**
  * Sends a temporary absence message. (Placeholder)
  */
@@ -790,46 +724,27 @@ function enviarMensagemAusencia() {
  * Lida com o início do jogo, lendo as configurações da UI.
  */
 function handleStartGame() {
-    const modoJogoEl = document.getElementById("modo-jogo");
+    // Leitura dos elementos ativos no painel
     const corEl = document.getElementById("cor");
-    const profundidadeEl = document.getElementById("profundidade");
-    const nomeJogador1El = document.getElementById("nome-jogador1");
-    const nomeJogador2El = document.getElementById("nome-jogador2");
+    const nivelEl = document.getElementById("nivel-ia");
 
-    const seletorEl = document.getElementById("modo-jogo"); // Ou o ID que lê a opção
-    const modoSelecionado = seletorEl ? seletorEl.value : "ia"; // Se não existir, assume padrão (ex: 'ia')
+    // Definições seguras dos parâmetros de jogo
+    const corUsuario = corEl ? corEl.value : "w";
+    const modoJogo = "humano-ia";
+    const nomeJogador1 = "Você";
+    const nomeJogador2 = "Stockfish";
 
-    const modo = modoJogoEl.value;
-    const cor = corEl.value;
-    const nome1 = nomeJogador1El.value;
-    const nome2 = nomeJogador2El.value;
-    
- // Configura o Stockfish com o nível escolhido na UI
-    if (profundidadeEl) {
-        const nivelEscolhido = profundidadeEl.value; // Captura o texto, ex: "8-0"
-        
-        if (nivelEscolhido) {
-            setCurrentLevel(nivelEscolhido); // Ativa o motor com a nova calibração!
-        }
-    }    
+    // Dispara o reset e a preparação do tabuleiro
+    if (typeof iniciarNovoJogo === 'function') {
+        iniciarNovoJogo(modoJogo, corUsuario, nomeJogador1, nomeJogador2);
+    }
 
- /*   if (modo === "humano-humano") {
-        if (!nome1 || !nome2) {
-            mostrarMensagemTemporaria("Por favor, insira o nome de ambos os jogadores.", 3000);
-            return;
-        }
-    }  */
-    
-    // Zera as variáveis de performance explicitamente ao clicar em Iniciar
-    performanceBrancas = 0;
-    performancePretas = 0;
-    notaUltimaBrancas = 0;
-    notaUltimaPretas = 0;
-    scoreEstavelAnterior = 30; 
-    if (timerEstabilizacao) clearTimeout(timerEstabilizacao);
-
-    // Chama a função de início no game-state
-    iniciarNovoJogo(modo, cor, nome1, nome2);
+    // Inicializa o motor de xadrez Stockfish
+    if (typeof inicializarStockfish === 'function') {
+        inicializarStockfish().catch((error) => {
+            console.error("Falha ao inicializar Stockfish:", error);
+        });
+    }
 }
 
 /**
@@ -885,11 +800,11 @@ function bindUIEvents() {
     if (manualBtn) manualBtn.addEventListener('click', mostrarManual);
 
     // Adiciona log para verificar se o botão de treinos é encontrado
-    const treinosBtn = document.getElementById("botao-problema-mate");
+    const treinosBtn = document.getElementById("btn-estudos");
     if (treinosBtn) {
         treinosBtn.addEventListener('click', mostrarGerenciarTreinos);
     } else {
-        console.error("DEBUG: Botão #botao-problema-mate NÃO ENCONTRADO no DOM.");
+        console.error("DEBUG: Botão #btn-estudos NÃO ENCONTRADO no DOM.");
     }
     
     // LIGAÇÃO DO NOVO BOTÃO DE CONFIRMAÇÃO
@@ -926,27 +841,7 @@ function bindUIEvents() {
 // Garante que os eventos sejam ligados após o DOM ser carregado
 document.addEventListener('DOMContentLoaded', bindUIEvents);
 
-// ========================================================
-// EXPORTAÇÕES DE MÓDULO (Refatorado para bloco único)
-// ========================================================
-export {
-    criarTabuleiro,
-    getCasaSelecionada,
-    setCasaSelecionada,
-    updateCapturesDisplay,
-    mostrarCor,
-    mostrarMensagemTemporaria,
-    atualizarAvaliacao,
-    mostrarEmojiAvaliacao,
-    verificarXeque,
-    mostrarManual,
-    mostrarGerenciarTreinos,
-    voltarAoJogo,
-    atualizarInfo,
-    atualizarEstadoJogo,
-    mostrarSugestoes, // AGORA EXPORTADO CORRETAMENTE NO BLOCO FINAL
-    bindUIEvents
-};
+
 
 // Exibe o banner permanente de Fim de Jogo (Fundo vermelho, texto branco maiúsculo)
 function exibirBannerFimDeJogo(texto) {
@@ -982,25 +877,99 @@ function sortearNivelRandomico() {
         inputNivel.value = nivelSorteado;
     }
     
-    if (typeof window.mostrarMensagemTemporaria === 'function') {
+if (typeof window.mostrarMensagemTemporaria === 'function') {
         window.mostrarMensagemTemporaria(`Nível sorteado: Profundidade ${nivelSorteado}`, 2000);
     }
 }
-// Exposição ao barramento global
+
+// --- CHAVEAMENTO DE TELAS ---
+// --- CHAVEAMENTO GERAL DE TELAS ---
+function alternarTela(idPainelDesejado) {
+    // Lista completa de todos os blocos do jogo e painéis que devem ser ocultados
+    const paineisParaOcultar = [
+        "painel-controles-topo", 
+        "tabuleiro", 
+        "estado-jogo", 
+        "mouse-coord", 
+        "capturas", 
+        "sugestoes", 
+        "sugestoes-linha", 
+        "avaliacao", 
+        "info", 
+        "temp-message-area", 
+        "manual", 
+        "gerenciar-treinos", 
+        "modal-editor-posicao"
+    ];
+
+    paineisParaOcultar.forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = "none";
+    });
+
+    // Liga exclusivamente o painel solicitado
+    const telaDesejada = document.getElementById(idPainelDesejado);
+    if (telaDesejada) {
+        telaDesejada.style.display = "block";
+        window.scrollTo(0, 0);
+    }
+}
+
+function mostrarManual() {
+    alternarTela("manual");
+}
+
+function mostrarGerenciarTreinos() {
+    alternarTela("gerenciar-treinos");
+    
+    // Assegura que o contêiner interno esteja visível
+    const elLista = document.getElementById("lista-problemas");
+    if (elLista) elLista.style.display = "block";
+
+    // Envia o pulso elétrico para ler o localStorage e desenhar os cards
+    if (typeof window.atualizarListaProblemas === 'function') {
+        window.atualizarListaProblemas();
+    }
+}
+
+// ========================================================
+// 1. BARRAMENTO GLOBAL (Conexão com os botões do HTML)
+// ========================================================
 if (typeof window !== 'undefined') {
     window.exibirBannerFimDeJogo = exibirBannerFimDeJogo;
     window.limparBannerFimDeJogo = limparBannerFimDeJogo;
     window.sortearNivelRandomico = sortearNivelRandomico;
-}
-// ========================================================
-// EXPOSIÇÃO GLOBAL (FIX para Dependência Circular e Sync)
-// ========================================================
-// Funções que pos_salvas.js precisa acessar globalmente
-if (typeof window !== 'undefined') {
     window.voltarAoJogo = voltarAoJogo;
     window.mostrarMensagemTemporaria = mostrarMensagemTemporaria;
     window.criarTabuleiro = criarTabuleiro;
     window.getJogoInstance = getJogoInstance; 
     window.atualizarInfo = atualizarInfo;
     window.atualizarEstadoJogo = atualizarEstadoJogo;
+    window.mostrarManual = mostrarManual;
+    window.mostrarGerenciarTreinos = mostrarGerenciarTreinos;
+    window.mostrarSugestoes = mostrarSugestoes;
 }
+
+// ========================================================
+// 2. RÉGUA ÚNICA DE EXPORTAÇÃO (Módulo ES6)
+// ========================================================
+export {
+    criarTabuleiro,
+    getCasaSelecionada,
+    setCasaSelecionada,
+    updateCapturesDisplay,
+    mostrarCor,
+    mostrarMensagemTemporaria,
+    atualizarAvaliacao,
+    mostrarEmojiAvaliacao,
+    verificarXeque,
+    mostrarManual,
+    mostrarGerenciarTreinos,
+    voltarAoJogo,
+    atualizarInfo,
+    atualizarEstadoJogo,
+    mostrarSugestoes,
+    bindUIEvents
+};
+
+console.log("MENSAGEM DE TESTE: As funções de painel e o barramento foram registrados no ui.js.");

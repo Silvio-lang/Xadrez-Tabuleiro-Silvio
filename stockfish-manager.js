@@ -577,4 +577,8 @@ export function getSugestoesIA() {
     return sugestoesIA; // Return the array of collected suggestions
 }
 
+// Conexão com o barramento global para o botão do HTML
+if (typeof window !== 'undefined') {
+    window.sugerirJogadas = sugerirJogadas;
+}
 // Note: Stockfish should be initialized when the game starts in config-setup.js

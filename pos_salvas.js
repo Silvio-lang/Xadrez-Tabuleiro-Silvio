@@ -94,13 +94,18 @@ export function atualizarListaProblemas() {
         const nomeExibicao = problema.nome || "Problema sem nome";
         nomeSpan.textContent = `${nomeExibicao} (${problema.turno})`;
         nomeSpan.style.flexGrow = "1";
+        nomeSpan.style.paddingRight = "10px"; // Evita colagem com os botões
         
+        // Caixa de botões com trava rígida de encolhimento
         const controlsDiv = document.createElement("div");
+        controlsDiv.style.display = "flex";
+        controlsDiv.style.alignItems = "center";
+        controlsDiv.style.gap = "5px";
+        controlsDiv.style.flexShrink = "0"; // Impede empilhamento e quebra de linha
 
         const carregarBtn = document.createElement("button");
         carregarBtn.textContent = "Carregar";
         carregarBtn.onclick = () => carregarProblema(problema.fen);
-        carregarBtn.style.marginRight = "5px";
         
         const removerBtn = document.createElement("button");
         removerBtn.textContent = "Remover";
@@ -185,6 +190,7 @@ function removerProblema(index) {
 
 // Garante a exposição global para o botão do HTML encontrar a função
 if (typeof window !== 'undefined') {
-    window.salvarPosicaoAtual = salvarPosicaoAtual;
+window.salvarPosicaoAtual = salvarPosicaoAtual;
     window.removerProblema = removerProblema;
+    window.atualizarListaProblemas = atualizarListaProblemas; // <-- Linha adicionada
 }

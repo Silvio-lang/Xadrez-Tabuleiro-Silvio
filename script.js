@@ -20,21 +20,19 @@ function iniciarPartida() {
         });
     }
 
-    // 1. Obter valores da UI
-    const modoJogo = document.getElementById("modo-jogo").value;
-    const corUsuario = document.getElementById("cor").value;
-    const nomeJogador1 = document.getElementById("nome-jogador1").value || "Jogador 1";
-    const nomeJogador2 = document.getElementById("nome-jogador2").value || "Jogador 2";
+    // 1. Definições fixas do circuito e leitura da cor selecionada
+    const modoJogo = "humano-ia";
+    const corUsuario = document.getElementById("cor") ? document.getElementById("cor").value : "w";
+    const nomeJogador1 = "Você";
+    const nomeJogador2 = "Stockfish";
     
-    // 2. Chamar a lógica de estado do jogo (do game-state.js)
-    // Isso irá resetar o tabuleiro, o histórico e chamar a IA se necessário
+    // 2. Acionamento da lógica de estado do jogo (game-state.js)
     iniciarNovoJogo(modoJogo, corUsuario, nomeJogador1, nomeJogador2);
 
-    // 3. Inicializar o Stockfish (se for modo IA)
+    // 3. Inicialização da IA
     if (modoJogo === "humano-ia") {
         inicializarStockfish().catch((error) => {
             console.error("Falha ao inicializar Stockfish:", error);
-            // Usamos 5000ms aqui de propósito, pois é um erro crítico
             mostrarMensagemTemporaria("Erro ao iniciar IA: " + error.message, 5000); 
         });
     }

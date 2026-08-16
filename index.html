@@ -30,51 +30,34 @@
 
   <h2 id="main-title" style="text-align: center;">XADREZ ON-LINE</h2>
 
-  <div class="grupo-botoes">
-    <div class="config-container">
-      <label>
-        <select id="modo-jogo"  style="display: none;">
-          <option value="humano-ia">IA</option>
-          <option value="humano-humano">Humano</option>
-        </select>
-      </label>
-      <div id="config-humano-ia">
-        <label style="font-size: 18px;">Suas Peças:
-          <select id="cor">
-            <option value="w">Brancas</option>
-            <option value="b">Pretas</option>
-          </select>
-        </label>
+<!-- CAIXA DOS CONTROLES DO TOPO -->
+<div id="painel-controles-topo">
 
-        <label for="nivel-ia">Nível (1 a 15):</label>
-        <input type="number" id="nivel-ia" min="1" max="15" value="5" style="width: 50px; text-align: center; font-weight: bold;">
-        <button type="button" id="btn-rand" onclick="sortearNivelRandomico()" style="padding: 2px 8px; font-weight: bold; cursor: pointer;">🎲 RAND</button>
-        </label>
-      </div>
-      <div id="config-humano-humano">
-        <label>Brancas:
-          <input type="text" id="nome-jogador1" placeholder="Nome do Jogador 1">
-        </label>
-        <label>Pretas:
-          <input type="text" id="nome-jogador2" placeholder="Nome do Jogador 2">
-        </label>
-      </div>
-    </div>
+  <!-- Linha 1: Configurações Niveladas -->
+  <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 4px; font-size: 16px; line-height: 36px;">
+    <span style="font-weight: bold; margin-right: 6px; height: 36px; display: flex; align-items: center;">Peças:</span>
+    <select id="cor" style="font-size: 16px; height: 36px; padding: 0 8px; margin: 0; border: 1px solid #8c8c8c; border-radius: 4px 0 0 4px; border-right: none; background: #f0f0f0; box-sizing: border-box; vertical-align: middle;">
+      <option value="w">Brancas</option>
+      <option value="b">Pretas</option>
+    </select>
+
+    <span style="font-weight: bold; margin: 0 6px 0 12px; height: 36px; display: flex; align-items: center;">Nível:</span>
+    <input type="number" id="nivel-ia" min="1" max="15" value="5" style="width: 48px; height: 36px; text-align: center; font-size: 16px; padding: 0; margin: 0; border: 1px solid #8c8c8c; border-radius: 4px 0 0 4px; border-right: none; background: #ffffff; box-sizing: border-box; vertical-align: middle;">
+    <button type="button" onclick="sortearNivelRandomico()" style="font-size: 16px; height: 36px; padding: 0 10px; margin: 0; border: 1px solid #8c8c8c; border-radius: 0 4px 4px 0; background: #e1e1e1; cursor: pointer; box-shadow: none; box-sizing: border-box; vertical-align: middle;">🎲 RAND</button>
   </div>
 
-  <div class="grupo-botoes top-controls-container">
-    <button id="btn-iniciar">🎲 INICIAR</button>
-    <button id="btn-voltar">◀</button>
-    <button id="btn-avancar">▶</button>
-    <!--   <button id="btn-retomar">✔️ RETOMAR</button> -->
-    <button id="btn-manual">📘 Instruções</button>
-    <button id="botao-problema-mate">🧩 ESTUDOS</button>   </div>
-    <!-- Botão mantido oculto para compatibilidade com o circuito do ui.js -->
-    <button id="btn-confirmar" style="display: none;">Jogue</button>
+  <!-- Linha 2: Régua Limpa -->
+  <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
+    <button type="button" id="btn-iniciar" style="font-size: 16px; font-weight: bold; height: 36px; padding: 0 12px; margin: 0; border: 1px solid #8c8c8c; border-radius: 4px 0 0 4px; border-right: none; background: #e1e1e1; cursor: pointer; box-shadow: none; box-sizing: border-box;">🎲 INICIAR</button>
+    <button type="button" id="btn-voltar" style="font-size: 16px; height: 36px; padding: 0 12px; margin: 0; border: 1px solid #8c8c8c; border-radius: 0; border-right: none; background: #e1e1e1; cursor: pointer; box-shadow: none; box-sizing: border-box;">◀</button>
+    <button type="button" id="btn-avancar" style="font-size: 16px; height: 36px; padding: 0 12px; margin: 0; border: 1px solid #8c8c8c; border-radius: 0; border-right: none; background: #e1e1e1; cursor: pointer; box-shadow: none; box-sizing: border-box;">▶</button>
+    <button type="button" id="btn-manual" onclick="mostrarManual()" style="font-size: 16px; height: 36px; padding: 0 12px; margin: 0; border: 1px solid #8c8c8c; border-radius: 0; border-right: none; background: #e1e1e1; cursor: pointer; box-shadow: none; box-sizing: border-box;">📖 Instruções</button>
+    <button type="button" id="btn-estudos" onclick="mostrarGerenciarTreinos()" style="font-size: 16px; height: 36px; padding: 0 12px; margin: 0; border: 1px solid #8c8c8c; border-radius: 0 4px 4px 0; background: #e1e1e1; cursor: pointer; box-shadow: none; box-sizing: border-box;">🧩 ESTUDOS</button>
+  </div>
 
-  <div id="estado-jogo">Selecione o modo de jogo para começar.</div>
+</div>
 
-  <div id="mouse-coord"></div>
+<div id="estado-jogo">Selecione o modo de jogo para começar.</div>  <div id="mouse-coord"></div>
 
 <div id="tabuleiro" class="board-container" style="width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center;">
     <img id="imagem-espera" src="cavaloinicial.jpg" alt="Aguardando início" style="width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important; object-fit: cover; display: block;">
